@@ -38,12 +38,12 @@ int main(int argc,char *argv[])
 
     inet_pton(AF_INET,argv[2],&Snd_ip);
     inet_pton(AF_INET,argv[4],&tar_ip);
-    printf("inet_pton : %02x\n",Snd_ip);
-    printf("inet_pton : %02x\n",tar_ip);
+    printf("Sender IP : %02x\n",Snd_ip);
     printf("SenderMac : ");
     for(i=0;i<6;i++)
     printf("%02x",My_mac[i]);
-    printf("\nTargetMac : ");
+    printf("\nTarget IP : %02x\n",tar_ip);
+    printf("TargetMac : ");
     for(i=0;i<6;i++)
     printf("%02x",tar_mac[i]);
 
