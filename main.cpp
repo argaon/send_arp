@@ -19,10 +19,12 @@ int main(int argc,char *argv[])
 
   //  char *My_ip= strcpy(My_ip,Snd_ip); //Send ip
     char *My_ip = Snd_ip;
-    unsigned int My_mac[6] ;//into Send mac
+    unsigned int My_mac[6] ;
     sscanf(argv[3], "%x:%x:%x:%x:%x:%x", &My_mac[0], &My_mac[1], &My_mac[2], &My_mac[3], &My_mac[4], &My_mac[5]);
+    //char 00:0c:29:75:04:db to int 000c297504db
     unsigned int tar_mac[6];
     sscanf(argv[5], "%x:%x:%x:%x:%x:%x", &tar_mac[0], &tar_mac[1], &tar_mac[2], &tar_mac[3], &tar_mac[4], &tar_mac[5]);
+    //char 00:0c:29:71:0b:ac to int 000c29710bac
 
     printf("ETHER_HEADER\n");
     printf("Dst MAC : %s\n",argv[5]);
