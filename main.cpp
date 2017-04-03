@@ -1,66 +1,80 @@
 #include <stdio.h>
-#include <pcap.h>
 #include <string.h>
+#include <pcap.h>
 #include <arpa/inet.h>//ip -> bin
 
+#define PCAP_OPENFLAG_PROMISCUOUS   1   // Even if it isn't my mac, receive packet
+
+struct _ether_hdr{
+    uint8_t Dst_mac[6];
+    uint8_t Src_mac[6];
+    uint8_t ether_type[2];
+};
+struct _arp_hdr {
+  uint8_t htype[2];
+  uint8_t ptype[2];
+  uint8_t hlen[1];
+  uint8_t plen[1];
+  uint8_t opcode[2];
+  uint8_t sender_mac[6];
+  uint8_t sender_ip[4];
+  uint8_t target_mac[6];
+  uint8_t target_ip[4];
+};
 //device SendIp SendMac TargetIp TargetMac
 int main(int argc,char *argv[])
 {
+    struct _ether_hdr eh;
+    struct _arp_hdr ah;
+    u_char sndPkt[42];
+    pcap_t *fp;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    int i;
+    char *dev = argv[1];    //get device name
+
     if(argc != 6)
     {
         printf("not enough argument!\n");
+        printf("EX : DEVICE SENDER_IP SENDER_MAC TARGET_IP TARGET_MAC\n");
+        return 1;
     }
-    char *dev = argv[1];    //get device name
-    char *Snd_ip = argv[2]; //get My_ip by Send ip
-    char *Snd_mac = argv[3];//get My_mac by Send mac
-    char *tar_ip = argv[4]; //get target's ip
- //   char *tar_mac = argv[5];//get target's mac
-    int i;
-
-  //  char *My_ip= strcpy(My_ip,Snd_ip); //Send ip
-    char *My_ip = Snd_ip;
-    unsigned int My_mac[6] ;
-    sscanf(argv[3], "%x:%x:%x:%x:%x:%x", &My_mac[0], &My_mac[1], &My_mac[2], &My_mac[3], &My_mac[4], &My_mac[5]);
-    //char 00:0c:29:75:04:db to int 000c297504db
-    unsigned int tar_mac[6];
-    sscanf(argv[5], "%x:%x:%x:%x:%x:%x", &tar_mac[0], &tar_mac[1], &tar_mac[2], &tar_mac[3], &tar_mac[4], &tar_mac[5]);
-    //char 00:0c:29:71:0b:ac to int 000c29710bac
-
-    printf("ETHER_HEADER\n");
-    printf("Dst MAC : %s\n",argv[5]);
-    printf("Src MAC : %s\n",argv[3]);
-    printf("ETHERTYPE : 0x0806\n");
-    printf("ARP_HEADER\n");
-    printf("SenderIP : %s\n",My_ip);   //192.168.205.130
-    printf("SenderMac : %s\n",argv[3]); //00:0c:29:75:04:db
-    printf("TargetIp : %s\n",tar_ip);  //192.168.205.131
-    printf("TargetMac : %s\n",argv[5]);//00:0c:29:71:0b:ac
-
-    inet_pton(AF_INET,argv[2],&Snd_ip);
-    inet_pton(AF_INET,argv[4],&tar_ip);
-    printf("Sender IP : %02x\n",Snd_ip);
-    printf("SenderMac : ");
+    if ( (fp= pcap_open_live(dev, 42, PCAP_OPENFLAG_PROMISCUOUS , 1000, errbuf)) == NULL)
+    {
+        fprintf(stderr,"Unable to open the adapter. %s is not supported by Pcap\n", argv[1]);
+        return 1;
+    }
+    inet_pton(AF_INET,argv[2],&ah.sender_ip);
+    sscanf(argv[3],"%x:%x:%x:%x:%x:%x",&eh.Src_mac[0],&eh.Src_mac[1],&eh.Src_mac[2],&eh.Src_mac[3],&eh.Src_mac[4],&eh.Src_mac[5]);
+    inet_pton(AF_INET,argv[4],&ah.target_ip);
+    sscanf(argv[5],"%x:%x:%x:%x:%x:%x",&eh.Dst_mac[0],&eh.Dst_mac[1],&eh.Dst_mac[2],&eh.Dst_mac[3],&eh.Dst_mac[4],&eh.Dst_mac[5]);
     for(i=0;i<6;i++)
-    printf("%02x",My_mac[i]);
-    printf("\nTarget IP : %02x\n",tar_ip);
-    printf("TargetMac : ");
+        ah.sender_mac[i] = eh.Src_mac[i];
     for(i=0;i<6;i++)
-    printf("%02x",tar_mac[i]);
+        ah.target_mac[i] = eh.Dst_mac[i];
+    eh.ether_type[0] = 0x08;
+    eh.ether_type[1] = 0x06;
+    ah.ptype[0] = 0x08;
+    ah.ptype[1] = 0x00;
+    ah.htype[0] = 0x00;
+    ah.htype[1] = 0x01;
+    ah.hlen[0] = 0x06;
+    ah.plen[0] = 0x04;
+    ah.opcode[0] = 0x00;
+    ah.opcode[1] = 0x02;
 
-    /*
+    memset(sndPkt,0,42*sizeof(u_char)); //write '0' with 42*1bite
 
-    printf("ETHER_HEADER\n");
-    printf("Dst MAC : %s\n",*tar_mac);
-    printf("Src MAC : %s\n",*My_mac);
-    printf("ETHERTYPE : 0x0806\n");
-    printf("ARP_HEADER\n");
-    printf("SenderIP : %s\n",*My_ip);   //192.168.205.130
-    printf("SenderMac : %s\n",*My_mac); //00:0c:29:75:04:db
-    printf("TargetIp : %s\n",*tar_ip);  //192.168.205.131
-    printf("TargetMac : %s\n",*tar_mac);//00:0c:29:71:0b:ac
-
-//    char Snd_pac[42] = tar_mac+My_mac+0x0806+My_ip+tar_ip+tar_mac; //Target_Mac+My_Mac+ETHER_TYPE+My_ip+Target_ip+Target_mac
-
-*/
+    memcpy(sndPkt,eh.Dst_mac,sizeof(eh.Dst_mac));
+    memcpy(sndPkt+6,eh.Src_mac,sizeof(eh.Src_mac));
+    memcpy(sndPkt+12,eh.ether_type,sizeof(eh.ether_type));
+    memcpy(sndPkt+14,ah.htype,sizeof(ah.htype));
+    memcpy(sndPkt+16,ah.ptype,sizeof(ah.ptype));
+    memcpy(sndPkt+18,ah.hlen,sizeof(ah.hlen));
+    memcpy(sndPkt+19,ah.plen,sizeof(ah.plen));
+    memcpy(sndPkt+20,ah.opcode,sizeof(ah.opcode));
+    memcpy(sndPkt+22,ah.sender_mac,sizeof(ah.sender_mac));
+    memcpy(sndPkt+28,ah.sender_ip,sizeof(ah.sender_ip));
+    memcpy(sndPkt+32,ah.target_mac,sizeof(ah.target_mac));
+    memcpy(sndPkt+38,ah.target_ip,sizeof(ah.target_ip));
+   pcap_sendpacket(fp,sndPkt,42);
 }
-
