@@ -30,7 +30,9 @@ struct my_hdr {
 int main(int argc,char *argv[])
 {
     struct my_hdr mh;
-    u_char sndPkt[42];
+    struct _ether_hdr *eh = &mh.eh;
+    struct _arp_hdr *ah = &mh.ah;
+//    u_char sndPkt[42];
     pcap_t *fp;
     char errbuf[PCAP_ERRBUF_SIZE];
     int i;
@@ -47,12 +49,12 @@ int main(int argc,char *argv[])
         fprintf(stderr,"Unable to open the adapter. %s is not supported by Pcap\n", argv[1]);
         return 1;
     }
-    inet_pton(AF_INET,argv[2],&mh.ah.sender_ip);
+    inet_pton(AF_INET,argv[2],&ah->sender_ip);
     sscanf(argv[3],"%x:%x:%x:%x:%x:%x",&mh.eh.Src_mac[0],&mh.eh.Src_mac[1],&mh.eh.Src_mac[2],&mh.eh.Src_mac[3],&mh.eh.Src_mac[4],&mh.eh.Src_mac[5]);
     inet_pton(AF_INET,argv[4],&mh.ah.target_ip);
     sscanf(argv[5],"%x:%x:%x:%x:%x:%x",&mh.eh.Dst_mac[0],&mh.eh.Dst_mac[1],&mh.eh.Dst_mac[2],&mh.eh.Dst_mac[3],&mh.eh.Dst_mac[4],&mh.eh.Dst_mac[5]);
     for(i=0;i<6;i++)
-        mh.ah.sender_mac[i] = mh.eh.Src_mac[i];
+        mh.ah.sender_mac[i] = eh->Src_mac[i];
     for(i=0;i<6;i++)
         mh.ah.target_mac[i] = mh.eh.Dst_mac[i];
     mh.eh.ether_type[0] = 0x08;
@@ -68,7 +70,7 @@ int main(int argc,char *argv[])
 
  //   u_char *etherhdr = &my_hdr;
 
-    memset(sndPkt,0,42*sizeof(u_char)); //write '0' with 42*1bite
+  /*  memset(sndPkt,0,42*sizeof(u_char)); //write '0' with 42*1bite
 
     memcpy(sndPkt,mh.eh.Dst_mac,sizeof(mh.eh.Dst_mac));
     memcpy(sndPkt+6,mh.eh.Src_mac,sizeof(mh.eh.Src_mac));
@@ -81,6 +83,6 @@ int main(int argc,char *argv[])
     memcpy(sndPkt+22,mh.ah.sender_mac,sizeof(mh.ah.sender_mac));
     memcpy(sndPkt+28,mh.ah.sender_ip,sizeof(mh.ah.sender_ip));
     memcpy(sndPkt+32,mh.ah.target_mac,sizeof(mh.ah.target_mac));
-    memcpy(sndPkt+38,mh.ah.target_ip,sizeof(mh.ah.target_ip));
-   pcap_sendpacket(fp,sndPkt,42);
+    memcpy(sndPkt+38,mh.ah.target_ip,sizeof(mh.ah.target_ip));*/
+   pcap_sendpacket(fp,(const u_char*)mh,42);
 }
