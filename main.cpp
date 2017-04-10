@@ -26,7 +26,7 @@ struct my_hdr {
     struct _arp_hdr ah;
 };
 #pragma pack(pop)
-u_char mac_changer(const char *ipm,u_char *opm) //ipm = inputmac, opm = outputmac
+u_int8_t mac_changer(const char *ipm,uint8_t *opm) //ipm = inputmac, opm = outputmac
 {
    return sscanf(ipm,"%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",&opm[0],&opm[1],&opm[2],&opm[3],&opm[4],&opm[5]);    //%x cause an error, fix to %2hhx
 }
